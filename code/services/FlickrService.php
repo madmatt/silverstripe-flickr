@@ -34,7 +34,7 @@ class FlickrService extends RestfulService {
 			$response = unserialize($response);
 
 			if(!$response || $response['stat'] !== 'ok') {
-				throw new Exception(sprintf("Response from Flickr not expected: %s", var_export($response, true)));
+				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($response, true)));
 			}
 
 			$results = new ArrayList();
@@ -53,6 +53,43 @@ class FlickrService extends RestfulService {
 				sprintf(
 					"Couldn't retrieve Flickr photosets for user '%s': Message: %s",
 					$userId,
+					$e->getMessage()
+				),
+				SS_Log::ERR
+			);
+
+			return null;
+		}
+	}
+
+	public function getPhotosetById($photosetId, $userId = null) {
+		$params = array(
+			'method' => 'flickr.photosets.getInfo',
+			'photoset_id' => $photosetId
+		);
+
+		if(!is_null($userId)) {
+			$params['user_id'] = $userId;
+		}
+
+		$this->setQueryString(array_merge($this->defaultParams(), $params));
+
+		try {
+			$response = $this->request()->getBody();
+			$response = unserialize($response);
+
+			if(!$response || $response['stat'] !== 'ok') {
+				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($response, true)));
+			}
+
+			$result = FlickrPhotoset::create_from_array($response['photoset']);
+			return $result;
+		} catch(Exception $e) {
+			SS_Log::log(
+				sprintf(
+					"Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
+					$userId,
+					$photosetId,
 					$e->getMessage()
 				),
 				SS_Log::ERR
@@ -87,7 +124,7 @@ class FlickrService extends RestfulService {
 			$response = $this->request()->getBody();
 			$response = unserialize($response);
 
-			if(!$response || $response['stat'] !== 'ok') {
+			if(!$response || !isset($response['stat']) || $response['stat'] !== 'ok') {
 				throw new Exception(sprintf("Response from Flickr not expected: %s", var_export($response, true)));
 			}
 
