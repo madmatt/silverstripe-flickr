@@ -11,6 +11,12 @@ class FlickrService extends RestfulService {
 	 */
 	private $apiKey;
 
+	/**
+	 * @see self::isApiAvailable()
+	 * @var bool true if the API is available, false if not
+	 */
+	private $apiAvailable;
+
 	public function __construct() {
 		parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_cache_expiry);
 		$this->checkErrors = true;
@@ -22,6 +28,8 @@ class FlickrService extends RestfulService {
 	 * @return ArrayList<FlickrPhotoset>
 	 */
 	public function getPhotosetsForUser($userId) {
+		if(!$this->isAPIAvailable()) return null;
+
 		$params = array(
 			'method' => 'flickr.photosets.getList',
 			'user_id' => $userId,
@@ -63,6 +71,8 @@ class FlickrService extends RestfulService {
 	}
 
 	public function getPhotosetById($photosetId, $userId = null) {
+		if(!$this->isAPIAvailable()) return null;
+
 		$params = array(
 			'method' => 'flickr.photosets.getInfo',
 			'photoset_id' => $photosetId
@@ -107,6 +117,8 @@ class FlickrService extends RestfulService {
 	 * @return ArrayList<FlickrPhoto>
 	 */
 	public function getPhotosInPhotoset($photosetId, $userId = null) {
+		if(!$this->isAPIAvailable()) return null;
+
 		$params = array(
 			'method' => 'flickr.photosets.getPhotos',
 			'photoset_id' => $photosetId,
@@ -151,7 +163,36 @@ class FlickrService extends RestfulService {
 
 			return null;
 		}
+	}
 
+	/**
+	 * @return bool true if the API is available right now, or false if it isn't
+	 */
+	public function isAPIAvailable() {
+		// Ensure we always query this, so we don't cache stale information, but only query once per request
+		if($this->apiAvailable) return $this->apiAvailable;
+		$oldExpiry = $this->cache_expire;
+		$this->cache_expire = 0;
+
+		$params = array(
+			'method' => 'flickr.test.echo'
+		);
+
+		$this->setQueryString(array_merge($this->defaultParams(), $params));
+
+		try {
+			$response = $this->request()->getBody();
+			$response = unserialize($response);
+
+			$return = $response['stat'] === "ok";
+		} catch(Exception $e) {
+			$return = false;
+		}
+
+		$this->cache_expire = $oldExpiry;
+
+		$this->apiAvailable = $return;
+		return $return;
 	}
 
 	public function setApiKey($key) {
