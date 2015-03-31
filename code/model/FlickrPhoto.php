@@ -68,7 +68,8 @@ class FlickrPhoto extends FlickrData {
 
 	private function getUrl($size = 'o') {
 		return sprintf(
-			'https://farm%d.staticflickr.com/%d/%d_%s_%s.jpg',
+			'%sfarm%d.staticflickr.com/%d/%d_%s_%s.jpg',
+			Director::protocol(),
 			$this->data['farm'],
 			$this->data['server'],
 			$this->data['id'],
