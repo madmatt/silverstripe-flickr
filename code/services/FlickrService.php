@@ -17,6 +17,29 @@ class FlickrService extends RestfulService {
 	 */
 	private $apiAvailable;
 
+	/**
+	 * @see self::isApiAvailable()
+	 * @var Integer The api response code from calling flickr.test.echo
+	 */
+	private $responseCode;
+
+	private $responseMessage;
+
+	/**
+	 * @see self::isApiAvailable()
+	 * @var Integer The api response code from calling flickr.test.echo
+	 */
+	private static $error_codes = array(
+		'100' => 'The API key passed was not valid or has expired.',
+		'105' => 'The requested service is temporarily unavailable.',
+		'106' => 'The requested operation failed due to a temporary issue.',
+		'111' => 'The requested response format was not found.',
+		'112' => 'The requested method was not found.',
+		'114' => 'The SOAP envelope send in the request could not be parsed.',
+		'115' => 'The XML-RPC request document could not be parsed.',
+		'116' => 'One or more arguments contained a URL that has been used for abuse on Flickr.'
+	);
+
 	public function __construct() {
 		parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_cache_expiry);
 		$this->checkErrors = true;
@@ -185,6 +208,21 @@ class FlickrService extends RestfulService {
 			$response = unserialize($response);
 
 			$return = $response['stat'] === "ok";
+
+			/*
+			 * $response contains an array, e.g.
+			 * {"stat":"fail", "code":100, "message":"Invalid API Key (Key has invalid format)"}
+			 */
+			if($response['stat'] === "ok") {
+				$return = true;
+			}
+			else {
+				// save the error code and message for service consumers to utilise
+				$this->responseCode = $response['code'];
+				$this->responseMessage = $response['message'];
+
+				$return = false;
+			}
 		} catch(Exception $e) {
 			$return = false;
 		}
@@ -204,6 +242,14 @@ class FlickrService extends RestfulService {
 		return $this->apiKey;
 	}
 
+	public function getApiResponseCode() {
+		return $this->responseCode;
+	}
+
+	public function getApiResponseMessage() {
+		return $this->responseMessage;
+	}
+		
 	private function defaultParams() {
 		return array(
 			'api_key' => $this->getApiKey(),
