@@ -17,6 +17,18 @@ class FlickrService extends RestfulService {
 	 */
 	private $apiAvailable;
 
+	/**
+	 * @see self::isApiAvailable()
+	 * @var Integer The api response code from calling flickr.test.echo
+	 */
+	private $responseCode;
+
+	/**
+	 * @see self::isApiAvailable()
+	 * @var String The api response message from calling flickr.test.echo
+	 */
+	private $responseMessage;
+
 	public function __construct() {
 		parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_cache_expiry);
 		$this->checkErrors = true;
@@ -185,6 +197,21 @@ class FlickrService extends RestfulService {
 			$response = unserialize($response);
 
 			$return = $response['stat'] === "ok";
+
+			/*
+			 * $response contains an array, e.g.
+			 * {"stat":"fail", "code":100, "message":"Invalid API Key (Key has invalid format)"}
+			 */
+			if($response['stat'] === "ok") {
+				$return = true;
+			}
+			else {
+				// save the error code and message for service consumers to utilise
+				$this->responseCode = $response['code'];
+				$this->responseMessage = $response['message'];
+
+				$return = false;
+			}
 		} catch(Exception $e) {
 			$return = false;
 		}
@@ -204,6 +231,22 @@ class FlickrService extends RestfulService {
 		return $this->apiKey;
 	}
 
+	/**
+	 * Get the API response code
+	 * @return String
+	 */
+	public function getApiResponseCode() {
+		return $this->responseCode;
+	}
+
+	/**
+	 * Get the API response message
+	 * @return String
+	 */
+	public function getApiResponseMessage() {
+		return $this->responseMessage;
+	}
+		
 	private function defaultParams() {
 		return array(
 			'api_key' => $this->getApiKey(),
