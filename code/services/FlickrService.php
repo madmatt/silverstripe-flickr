@@ -23,22 +23,11 @@ class FlickrService extends RestfulService {
 	 */
 	private $responseCode;
 
-	private $responseMessage;
-
 	/**
 	 * @see self::isApiAvailable()
-	 * @var Integer The api response code from calling flickr.test.echo
+	 * @var String The api response message from calling flickr.test.echo
 	 */
-	private static $error_codes = array(
-		'100' => 'The API key passed was not valid or has expired.',
-		'105' => 'The requested service is temporarily unavailable.',
-		'106' => 'The requested operation failed due to a temporary issue.',
-		'111' => 'The requested response format was not found.',
-		'112' => 'The requested method was not found.',
-		'114' => 'The SOAP envelope send in the request could not be parsed.',
-		'115' => 'The XML-RPC request document could not be parsed.',
-		'116' => 'One or more arguments contained a URL that has been used for abuse on Flickr.'
-	);
+	private $responseMessage;
 
 	public function __construct() {
 		parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_cache_expiry);
