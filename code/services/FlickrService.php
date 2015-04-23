@@ -231,10 +231,18 @@ class FlickrService extends RestfulService {
 		return $this->apiKey;
 	}
 
+	/**
+	 * Get the API response code
+	 * @return String
+	 */
 	public function getApiResponseCode() {
 		return $this->responseCode;
 	}
 
+	/**
+	 * Get the API response message
+	 * @return String
+	 */
 	public function getApiResponseMessage() {
 		return $this->responseMessage;
 	}
