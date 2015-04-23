@@ -48,7 +48,7 @@ class FlickrService extends RestfulService {
 			$results = new ArrayList();
 
 			foreach($response['photosets']['photoset'] as $set) {
-				$obj = FlickrPhotoset::create_from_array($set);
+				$obj = FlickrPhotoset::create_from_array($set, $userId);
 
 				if($obj) {
 					$results->push($obj);
