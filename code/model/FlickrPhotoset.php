@@ -4,6 +4,10 @@ class FlickrPhotoset extends FlickrData {
 		'Title' => 'Varchar',
 		'ID' => 'Varchar'
 	);
+	
+	/**
+	 * @var string photoset owner identifier
+	 */
 	private $userId = null;
 
 	/**
