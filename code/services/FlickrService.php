@@ -104,7 +104,7 @@ class FlickrService extends RestfulService {
 				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($response, true)));
 			}
 
-			$result = FlickrPhotoset::create_from_array($response['photoset']);
+			$result = FlickrPhotoset::create_from_array($response['photoset'], $userId);
 			return $result;
 		} catch(Exception $e) {
 			SS_Log::log(
