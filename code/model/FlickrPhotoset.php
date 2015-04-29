@@ -21,11 +21,12 @@ class FlickrPhotoset extends FlickrData {
 	}
 
 	/**
+	 * Transforms API response into parsed array
 	 * @param array $set
-	 * @param string $userId
+	 * @param string $userId|null userId required for certain functions
 	 * @return FlickrPhotoset|null
 	 */
-	public static function create_from_array($set, $userId) {
+	public static function create_from_array($set, $userId = null) {
 		// Validate input and return null if required params are not set
 		if(!isset($set['id']) || !isset($set['title']) || !isset($set['title']['_content'])) {
 			return null;
