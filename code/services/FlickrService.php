@@ -166,9 +166,10 @@ class FlickrService extends RestfulService {
 		} catch(Exception $e) {
 			SS_Log::log(
 				sprintf(
-					"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
+					"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'. Message: %s",
 					$photosetId,
-					$userId
+					$userId,
+					$e->getMessage()
 				),
 				SS_Log::ERR
 			);
