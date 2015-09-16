@@ -86,7 +86,7 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			if(!self::$skipErrorLogging) {
+			if(!$this->config()->skipErrorLogging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photosets for user '%s': Message: %s",
@@ -126,7 +126,7 @@ class FlickrService extends RestfulService {
 			$result = FlickrPhotoset::create_from_array($response['photoset'], $userId);
 			return $result;
 		} catch(Exception $e) {
-			if(!self::$skipErrorLogging) {
+			if(!$this->config()->skipErrorLogging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
@@ -185,7 +185,7 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			if(!self::$skipErrorLogging) {
+			if(!$this->config()->skipErrorLogging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
@@ -231,7 +231,7 @@ class FlickrService extends RestfulService {
 		// setup cache
 		$cache = SS_Cache::factory('Flickr');
 		$cache->setOption('automatic_serialization', true);
-		SS_Cache::set_cache_lifetime('Flickr', self::$flickr_hard_cache_expiry);
+		SS_Cache::set_cache_lifetime('Flickr', $this->config()->flickr_hard_cache_expiry);
 
 		// check if cached response exists or soft expiry has elapsed
 		$metadata = $cache->getBackend()->getMetadatas('Flickr' . $cacheKey);
@@ -312,7 +312,7 @@ class FlickrService extends RestfulService {
 	 * @param int $modifiedTime Timestamp of when cache file was last modified
 	 */
 	public function softCacheExpired($modified) {
-		return time() > $modified + self::$flickr_soft_cache_expiry;
+		return time() > $modified + $this->config()->flickr_soft_cache_expiry;
 	}
 
 	public function setApiKey($key) {
