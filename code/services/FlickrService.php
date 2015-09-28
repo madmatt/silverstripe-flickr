@@ -67,11 +67,11 @@ class FlickrService extends RestfulService {
 		$this->setQueryString(array_merge($this->defaultParams(), $params));
 
 		try {
-			$response = $this->request()->getBody();
-			$response = unserialize($response);
+			$rawResponse = $this->request()->getBody();
+			$response = unserialize($rawResponse);
 
 			if(!$response || $response['stat'] !== 'ok') {
-				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($response, true)));
+				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($rawResponse, true)));
 			}
 
 			$results = new ArrayList();
@@ -116,11 +116,11 @@ class FlickrService extends RestfulService {
 		$this->setQueryString(array_merge($this->defaultParams(), $params));
 
 		try {
-			$response = $this->request()->getBody();
-			$response = unserialize($response);
+			$rawResponse = $this->request()->getBody();
+			$response = unserialize($rawResponse);
 
 			if(!$response || $response['stat'] !== 'ok') {
-				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($response, true)));
+				throw new Exception(sprintf('Response from Flickr not expected: %s', var_export($rawResponse, true)));
 			}
 
 			$result = FlickrPhotoset::create_from_array($response['photoset'], $userId);
@@ -166,11 +166,11 @@ class FlickrService extends RestfulService {
 		$this->setQueryString(array_merge($this->defaultParams(), $params));
 
 		try {
-			$response = $this->request()->getBody();
-			$response = unserialize($response);
+			$rawResponse = $this->request()->getBody();
+			$response = unserialize($rawResponse);
 
 			if(!$response || !isset($response['stat']) || $response['stat'] !== 'ok') {
-				throw new Exception(sprintf("Response from Flickr not expected: %s", var_export($response, true)));
+				throw new Exception(sprintf("Response from Flickr not expected: %s", var_export($rawResponse, true)));
 			}
 
 			$results = new ArrayList();
@@ -279,8 +279,8 @@ class FlickrService extends RestfulService {
 		$this->setQueryString(array_merge($this->defaultParams(), $params));
 
 		try {
-			$response = $this->request()->getBody();
-			$response = unserialize($response);
+			$rawResponse = $this->request()->getBody();
+			$response = unserialize($rawResponse);
 
 			$return = $response['stat'] === "ok";
 
