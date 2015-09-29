@@ -20,7 +20,7 @@ class FlickrService extends RestfulService {
 	 * This can be turned on when using the getCachedCall method,
 	 * so errors are only logged if both the API response and SS_Cache fallback fails.
 	 */
-	private static $skip_errors_logging = false;
+	private static $skip_error_logging = false;
 
 	/**
 	 * @var string The API key to be used for the next request to the API. This may change between requests (with calls
@@ -86,7 +86,7 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			if(!$this->config()->skip_errors_logging) {
+			if(!$this->config()->skip_error_logging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photosets for user '%s': Message: %s",
@@ -126,7 +126,7 @@ class FlickrService extends RestfulService {
 			$result = FlickrPhotoset::create_from_array($response['photoset'], $userId);
 			return $result;
 		} catch(Exception $e) {
-			if(!$this->config()->skip_errors_logging) {
+			if(!$this->config()->skip_error_logging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
@@ -185,7 +185,7 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			if(!$this->config()->skip_errors_logging) {
+			if(!$this->config()->skip_error_logging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
