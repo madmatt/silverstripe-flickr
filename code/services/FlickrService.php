@@ -20,7 +20,7 @@ class FlickrService extends RestfulService {
 	 * This can be turned on when using the getCachedCall method,
 	 * so errors are only logged if both the API response and SS_Cache fallback fails.
 	 */
-	private static $skipErrorLogging = false;
+	private static $skip_errors_logging = false;
 
 	/**
 	 * @var string The API key to be used for the next request to the API. This may change between requests (with calls
@@ -86,7 +86,7 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			if(!$this->config()->skipErrorLogging) {
+			if(!$this->config()->skip_errors_logging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photosets for user '%s': Message: %s",
@@ -126,7 +126,7 @@ class FlickrService extends RestfulService {
 			$result = FlickrPhotoset::create_from_array($response['photoset'], $userId);
 			return $result;
 		} catch(Exception $e) {
-			if(!$this->config()->skipErrorLogging) {
+			if(!$this->config()->skip_errors_logging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
@@ -185,7 +185,7 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			if(!$this->config()->skipErrorLogging) {
+			if(!$this->config()->skip_errors_logging) {
 				SS_Log::log(
 					sprintf(
 						"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
@@ -229,20 +229,16 @@ class FlickrService extends RestfulService {
 		$cacheKey = md5(implode('_', $cacheKey));
 
 		// setup cache
-		$cache = SS_Cache::factory('Flickr');
+		$cache = SS_Cache::factory('FlickrService');
 		$cache->setOption('automatic_serialization', true);
-		SS_Cache::set_cache_lifetime('Flickr', $this->config()->flickr_hard_cache_expiry);
+		SS_Cache::set_cache_lifetime('FlickrService', $this->config()->flickr_hard_cache_expiry);
 
 		// check if cached response exists or soft expiry has elapsed
-		$metadata = $cache->getBackend()->getMetadatas('Flickr' . $cacheKey);
+		$metadata = $cache->getBackend()->getMetadatas('FlickrService' . $cacheKey);
 		if(!($result = $cache->load($cacheKey)) || $this->softCacheExpired($metadata['mtime'])) {
 			// try update the cache
 			try {
-				if($argsCount == 1) {
-					$result = $this->$funcName($args[0]);
-				} elseif($argsCount == 2) {
-					$result = $this->$funcName($args[0], $args[1]);
-				}
+				call_user_func_array(array($this, $funcName), $args);
 
 				// only update cache if result returned
 				if($result) {
@@ -310,9 +306,10 @@ class FlickrService extends RestfulService {
 
 	/** 
 	 * @param int $modifiedTime Timestamp of when cache file was last modified
+	 * @return boolean Check to see if the soft cache has expired
 	 */
-	public function softCacheExpired($modified) {
-		return time() > $modified + $this->config()->flickr_soft_cache_expiry;
+	public function softCacheExpired($modifiedTime) {
+		return time() > $modifiedTime + $this->config()->flickr_soft_cache_expiry;
 	}
 
 	public function setApiKey($key) {
