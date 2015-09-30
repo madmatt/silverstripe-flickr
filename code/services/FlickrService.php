@@ -1,9 +1,26 @@
 <?php
 class FlickrService extends RestfulService {
 	/**
-	 * @var int Expiry time for API calls, measured in seconds. 3600 == 1 hour.
+	 * @var int Expiry time for API calls
+	 * This determines how long the cache is used before another API request
+	 * is made to update the cache, measured in seconds. 3600 == 1 hour.
 	 */
-	private static $flickr_cache_expiry = 3600;
+	private static $flickr_soft_cache_expiry = 3600;
+
+	/**
+	 * @var int Expiry time for SS_Cache
+	 * This determines how long the cache is kept before it is permanently cleared.
+	 * We need to clear at some point to ensure photosets removed from Flickr are eventually
+	 * hidden at the website end, measured in seconds. 86400 == 1 day.
+	 */
+	private static $flickr_hard_cache_expiry = 86400;
+
+	/**
+	 * @var boolean To determine if errors should be logged everytime
+	 * This can be turned on when using the getCachedCall method,
+	 * so errors are only logged if both the API response and SS_Cache fallback fails.
+	 */
+	private static $skip_error_logging = false;
 
 	/**
 	 * @var string The API key to be used for the next request to the API. This may change between requests (with calls
@@ -30,7 +47,7 @@ class FlickrService extends RestfulService {
 	private $responseMessage;
 
 	public function __construct() {
-		parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_cache_expiry);
+		parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_soft_cache_expiry);
 		$this->checkErrors = true;
 	}
 
@@ -69,14 +86,16 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			SS_Log::log(
-				sprintf(
-					"Couldn't retrieve Flickr photosets for user '%s': Message: %s",
-					$userId,
-					$e->getMessage()
-				),
-				SS_Log::ERR
-			);
+			if(!$this->config()->skip_error_logging) {
+				SS_Log::log(
+					sprintf(
+						"Couldn't retrieve Flickr photosets for user '%s': Message: %s",
+						$userId,
+						$e->getMessage()
+					),
+					SS_Log::ERR
+				);
+			}
 
 			return null;
 		}
@@ -107,15 +126,17 @@ class FlickrService extends RestfulService {
 			$result = FlickrPhotoset::create_from_array($response['photoset'], $userId);
 			return $result;
 		} catch(Exception $e) {
-			SS_Log::log(
-				sprintf(
-					"Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
-					$userId,
-					$photosetId,
-					$e->getMessage()
-				),
-				SS_Log::ERR
-			);
+			if(!$this->config()->skip_error_logging) {
+				SS_Log::log(
+					sprintf(
+						"Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
+						$userId,
+						$photosetId,
+						$e->getMessage()
+					),
+					SS_Log::ERR
+				);
+			}
 
 			return null;
 		}
@@ -164,18 +185,78 @@ class FlickrService extends RestfulService {
 
 			return $results;
 		} catch(Exception $e) {
-			SS_Log::log(
-				sprintf(
-					"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'. Message: %s",
-					$photosetId,
-					$userId,
-					$e->getMessage()
-				),
-				SS_Log::ERR
-			);
+			if(!$this->config()->skip_error_logging) {
+				SS_Log::log(
+					sprintf(
+						"Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
+						$photosetId,
+						$userId
+					),
+					SS_Log::ERR
+				);
+			}
 
 			return null;
 		}
+	}
+
+	/**
+	 * This returns API responses saved to a SS_Cache file instead of the API response directly
+	 * as the Flickr API is often not reliable
+	 * 
+	 * @param String $funcName Name of the function to call if cache expired or does not exist
+	 * @param  array $args Arguments for the function
+	 * @return ArrayList<FlickrPhoto|FlickrPhotoset>
+	 */
+	public function getCachedCall($funcName, $args = array()) {
+		$result = null;
+		$argsCount = count($args);
+
+		if($argsCount < 1) {
+			return $result;
+		}
+
+		// build up a unique cache name
+		$cacheKey = array(
+			$funcName
+		);
+
+		foreach ($args as $arg) {
+			$cacheKey[] = $arg;
+		}
+
+		// to hide api key and remove non alphanumeric characters
+		$cacheKey = md5(implode('_', $cacheKey));
+
+		// setup cache
+		$cache = SS_Cache::factory('FlickrService');
+		$cache->setOption('automatic_serialization', true);
+		SS_Cache::set_cache_lifetime('FlickrService', $this->config()->flickr_hard_cache_expiry);
+
+		// check if cached response exists or soft expiry has elapsed
+		$metadata = $cache->getBackend()->getMetadatas('FlickrService' . $cacheKey);
+		if(!($result = $cache->load($cacheKey)) || $this->softCacheExpired($metadata['mtime'])) {
+			// try update the cache
+			try {
+				call_user_func_array(array($this, $funcName), $args);
+
+				// only update cache if result returned
+				if($result) {
+					$cache->save($result, $cacheKey);
+				}
+			} catch(Exception $e) {
+				SS_Log::log(
+					sprintf(
+						"Couldn't retrieve Flickr photos using '%s': Message: %s",
+						$funcName,
+						$e->getMessage()
+					),
+					SS_Log::ERR
+				);
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -221,6 +302,14 @@ class FlickrService extends RestfulService {
 
 		$this->apiAvailable = $return;
 		return $return;
+	}
+
+	/** 
+	 * @param int $modifiedTime Timestamp of when cache file was last modified
+	 * @return boolean Check to see if the soft cache has expired
+	 */
+	public function softCacheExpired($modifiedTime) {
+		return time() > $modifiedTime + $this->config()->flickr_soft_cache_expiry;
 	}
 
 	public function setApiKey($key) {
