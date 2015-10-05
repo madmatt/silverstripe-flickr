@@ -238,7 +238,7 @@ class FlickrService extends RestfulService {
 		if(!($result = $cache->load($cacheKey)) || $this->softCacheExpired($metadata['mtime'])) {
 			// try update the cache
 			try {
-				call_user_func_array(array($this, $funcName), $args);
+				$result = call_user_func_array(array($this, $funcName), $args);
 
 				// only update cache if result returned
 				if($result) {
