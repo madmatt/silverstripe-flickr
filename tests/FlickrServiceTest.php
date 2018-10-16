@@ -1,9 +1,19 @@
 <?php
+
+namespace MadMatt\Flickr\Tests;
+
+use SilverStripe\Dev\SapphireTest;
+use SilverStripe\Core\Injector\Injector;
 class FlickrServiceTest extends SapphireTest
 {
-
+    /**
+     * @var integer
+     */
     private $callCount = 0;
 
+    /**
+     * @return void
+     */
     public function setUpOnce()
     {
         parent::setUpOnce();
@@ -102,7 +112,8 @@ class FlickrServiceTest extends SapphireTest
 
     /**
      * Mimic successful responses from the Flickr API
-     * @return [type] [description]
+     * 
+     * @return RestfulService_Response
      */
     private function getMockResponse_getPhotosetsForUser()
     {
@@ -111,6 +122,9 @@ class FlickrServiceTest extends SapphireTest
         return $response;
     }
 
+    /**
+     * @return RestfulService_Response
+     */
     private function getMockResponse_getPhotosInPhotoset()
     {
         $body = 'a:2:{s:8:"photoset";a:11:{s:2:"id";s:17:"72157658305686922";s:7:"primary";s:11:"21231207825";s:5:"owner";s:13:"132044853@N08";s:9:"ownername";s:20:"Waterview Connection";s:5:"photo";a:9:{i:0;a:10:{s:2:"id";s:11:"21231207825";s:6:"secret";s:10:"a0fb1361eb";s:6:"server";s:3:"756";s:4:"farm";d:1;s:5:"title";s:68:"Carrington Road retaining walls, installation of road-side barriers.";s:9:"isprimary";s:1:"1";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:1;a:10:{s:2:"id";s:11:"21220775302";s:6:"secret";s:10:"e582d4f000";s:6:"server";s:3:"756";s:4:"farm";d:1;s:5:"title";s:42:"Southern Ventilation Building ground level";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:2;a:10:{s:2:"id";s:11:"21043089010";s:6:"secret";s:10:"914f537b96";s:6:"server";s:3:"635";s:4:"farm";d:1;s:5:"title";s:29:"Southern Ventilation Building";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:3;a:10:{s:2:"id";s:11:"21204947056";s:6:"secret";s:10:"932deaa01d";s:6:"server";s:3:"582";s:4:"farm";d:1;s:5:"title";s:28:"Great North Road Interchange";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:4;a:10:{s:2:"id";s:11:"21239142771";s:6:"secret";s:10:"a385f64946";s:6:"server";s:3:"763";s:4:"farm";d:1;s:5:"title";s:30:"Valonia Fields, Spoil Building";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:5;a:10:{s:2:"id";s:11:"20608509954";s:6:"secret";s:10:"781df33636";s:6:"server";s:4:"5663";s:4:"farm";d:6;s:5:"title";s:69:"Maioro St Interchange, segment stacks, southern shared cycle/footpath";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:6;a:10:{s:2:"id";s:11:"20608510074";s:6:"secret";s:10:"1c5c86d75d";s:6:"server";s:4:"5679";s:4:"farm";d:6;s:5:"title";s:26:"Dennis gantry on ramp four";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:7;a:10:{s:2:"id";s:11:"20608511254";s:6:"secret";s:10:"0956468596";s:6:"server";s:4:"5748";s:4:"farm";d:6;s:5:"title";s:77:"Spoil Conveyor, Hendon Footbridge, culvert storage, tunnel team headquarters.";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:0:"";}}i:8;a:10:{s:2:"id";s:11:"20608510974";s:6:"secret";s:10:"a0b7162da0";s:6:"server";s:4:"5710";s:4:"farm";d:6;s:5:"title";s:24:"Northern Approach Trench";s:9:"isprimary";s:1:"0";s:8:"ispublic";i:1;s:8:"isfriend";i:0;s:8:"isfamily";i:0;s:11:"description";a:1:{s:8:"_content";s:50:"Rise of the permanent roads and central corridors.";}}}s:4:"page";i:1;s:8:"per_page";i:500;s:7:"perpage";i:500;s:5:"pages";d:1;s:5:"total";s:1:"9";s:5:"title";s:14:"September 2015";}s:4:"stat";s:2:"ok";}';
@@ -118,6 +132,9 @@ class FlickrServiceTest extends SapphireTest
         return $response;
     }
 
+    /**
+     * @return void
+     */
     private function getMockResponse_getPhotosetsForUser_increaseCount()
     {
         $this->callCount++;
