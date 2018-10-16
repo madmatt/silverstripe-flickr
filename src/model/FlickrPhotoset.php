@@ -1,10 +1,20 @@
 <?php
+
+namespace MadMatt\Flickr\Model;
+
+use MadMatt\Flickr\Model\FlickrData;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Control\Director;
+
 class FlickrPhotoset extends FlickrData
 {
-    private static $casting = array(
+    /**
+     * @var array
+     */
+    private static $casting = [
         'Title' => 'Varchar',
         'ID' => 'Varchar'
-    );
+    ];
     
     /**
      * @var string photoset owner identifier
@@ -31,7 +41,10 @@ class FlickrPhotoset extends FlickrData
     public static function create_from_array($set, $userId = null)
     {
         // Validate input and return null if required params are not set
-        if (!isset($set['id']) || !isset($set['title']) || !isset($set['title']['_content'])) {
+        if (!isset($set['id']) || 
+            !isset($set['title']) || 
+            !isset($set['title']['_content'])
+        ) {
             return null;
         }
 
