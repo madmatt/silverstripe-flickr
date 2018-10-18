@@ -2,21 +2,27 @@
 
 namespace MadMatt\Flickr\Services;
 
+use Exception;
+use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
-use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\ArrayList;
 use Psr\SimpleCache\CacheInterface;
-use GuzzleHttp\Client;
+use MadMatt\Flickr\Model\FlickrPhotoset;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Core\Config\Configurable;
+
 class FlickrService
 {
+    use Configurable;
+
     /**
      * Handler for the GuzzleHttp client, has replaced the 'RestfulService' API
      * as it is now deprecated in 4.0
      *
      * @var GuzzleHttp
      */
-    private static $client;
-    
+    private $client;
+
     /**
      * @var int Expiry time for API calls
      * This determines how long the cache is used before another API request
@@ -90,18 +96,16 @@ class FlickrService
             'user_id' => $userId,
         ];
 
-        // $this->client->setQueryString(array_merge($this->defaultParams(), $params));
-        $response = $this->client->request(
-            'GET',
-            'https://www.flickr.com/services/rest/',
-            [
-                'query' => array_merge($this->defaultParams(), $params)
-            ]
-        );
-
         try {
-            // $rawResponse = $this->request()->getBody();
-            $rawResponse = $response->getBody();
+            $request = $this->client->request(
+                'GET',
+                'https://www.flickr.com/services/rest/',
+                [
+                    'query' => array_merge($this->defaultParams(), $params)
+                ]
+            );
+            
+            $rawResponse = $request->getBody();
             $response = unserialize($rawResponse);
 
             if (!$response || $response['stat'] !== 'ok') {
@@ -121,13 +125,12 @@ class FlickrService
             return $results;
         } catch (Exception $e) {
             if (!$this->config()->skip_error_logging) {
-                Injector::inst()->get(LoggerInterface::class)::log(
+                Injector::inst()->get(LoggerInterface::class)->error(
                     sprintf(
                         "Couldn't retrieve Flickr photosets for user '%s': Message: %s",
                         $userId,
                         $e->getMessage()
-                    ),
-                    Injector::inst()->get(LoggerInterface::class)::ERR
+                    )
                 );
             }
 
@@ -155,19 +158,16 @@ class FlickrService
         if (!is_null($userId)) {
             $params['user_id'] = $userId;
         }
-
-        // $this->setQueryString(array_merge($this->defaultParams(), $params));
-        $response = $this->client->request(
-            'GET',
-            'https://www.flickr.com/services/rest/',
-            [
-                'query' => array_merge($this->defaultParams(), $params)
-            ]
-        );
-
+ 
         try {
-            // $rawResponse = $this->request()->getBody();
-            $rawResponse = $response->getBody();
+            $request = $this->client->request(
+                'GET',
+                'https://www.flickr.com/services/rest/',
+                [
+                    'query' => array_merge($this->defaultParams(), $params)
+                ]
+            );
+            $rawResponse = $request->getBody();
             $response = unserialize($rawResponse);
 
             if (!$response || $response['stat'] !== 'ok') {
@@ -178,14 +178,13 @@ class FlickrService
             return $result;
         } catch (Exception $e) {
             if (!$this->config()->skip_error_logging) {
-                Injector::inst()->get(LoggerInterface::class)::log(
+                Injector::inst()->get(LoggerInterface::class)->error(
                     sprintf(
                         "Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
                         $userId,
                         $photosetId,
                         $e->getMessage()
-                    ),
-                    Injector::inst()->get(LoggerInterface::class)::ERR
+                    )
                 );
             }
 
@@ -216,18 +215,15 @@ class FlickrService
             $params['user_id'] = $userId;
         }
 
-        // $this->setQueryString(array_merge($this->defaultParams(), $params));
-        $response = $this->client->request(
-            'GET',
-            'https://www.flickr.com/services/rest/',
-            [
-                'query' => array_merge($this->defaultParams(), $params)
-            ]
-        );
-
         try {
-            // $rawResponse = $this->request()->getBody();
-            $rawResponse = $response->getBody();
+            $request = $this->client->request(
+                'GET',
+                'https://www.flickr.com/services/rest/',
+                [
+                    'query' => array_merge($this->defaultParams(), $params)
+                ]
+            );
+            $rawResponse = $request->getBody();
             $response = unserialize($rawResponse);
 
             if (!$response || !isset($response['stat']) || $response['stat'] !== 'ok') {
@@ -247,13 +243,12 @@ class FlickrService
             return $results;
         } catch (Exception $e) {
             if (!$this->config()->skip_error_logging) {
-                Injector::inst()->get(LoggerInterface::class)::log(
+                Injector::inst()->get(LoggerInterface::class)->error(
                     sprintf(
                         "Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
                         $photosetId,
                         $userId
-                    ),
-                    Injector::inst()->get(LoggerInterface::class)::ERR
+                    )
                 );
             }
 
@@ -264,7 +259,7 @@ class FlickrService
     /**
      * This returns API responses saved to a SS_Cache file instead of the API response directly
      * as the Flickr API is often not reliable
-     * 
+     *
      * @param String $funcName Name of the function to call if cache expired or does not exist
      * @param  array $args Arguments for the function
      * @return ArrayList<FlickrPhoto|FlickrPhotoset>
@@ -307,13 +302,12 @@ class FlickrService
                     $cache->save($result, $cacheKey);
                 }
             } catch (Exception $e) {
-                Injector::inst()->get(LoggerInterface::class)::log(
+                Injector::inst()->get(LoggerInterface::class)->error(
                     sprintf(
                         "Couldn't retrieve Flickr photos using '%s': Message: %s",
                         $funcName,
                         $e->getMessage()
-                    ),
-                    Injector::inst()->get(LoggerInterface::class)::ERR
+                    )
                 );
             }
         }
@@ -330,17 +324,23 @@ class FlickrService
         if ($this->apiAvailable) {
             return $this->apiAvailable;
         }
-        $oldExpiry = $this->cache_expire;
-        $this->cache_expire = 0;
+        // $oldExpiry = $this->cache_expire;
+        // $this->cache_expire = 0;
 
         $params = array(
             'method' => 'flickr.test.echo'
         );
 
-        $this->setQueryString(array_merge($this->defaultParams(), $params));
-
         try {
-            $rawResponse = $this->request()->getBody();
+            $request = $this->client->request(
+                'GET',
+                'https://www.flickr.com/services/rest/',
+                [
+                    'query' => array_merge($this->defaultParams(), $params)
+                ]
+            );
+
+            $rawResponse = $request->getBody();
             $response = unserialize($rawResponse);
 
             $return = $response['stat'] === "ok";
@@ -362,13 +362,13 @@ class FlickrService
             $return = false;
         }
 
-        $this->cache_expire = $oldExpiry;
+        // $this->cache_expire = $oldExpiry;
 
         $this->apiAvailable = $return;
         return $return;
     }
 
-    /** 
+    /**
      * @param int $modifiedTime Timestamp of when cache file was last modified
      * @return boolean Check to see if the soft cache has expired
      */
@@ -401,7 +401,7 @@ class FlickrService
 
     /**
      * Get the API response code
-     * 
+     *
      * @param Response
      * @return String
      */
@@ -412,7 +412,7 @@ class FlickrService
 
     /**
      * Get the API response message
-     * 
+     *
      * @param Response
      * @return String
      */
@@ -420,7 +420,7 @@ class FlickrService
     {
         return $response->getReasonPhrase();
     }
-        
+
     /**
      * Helper to get default params of client
      *

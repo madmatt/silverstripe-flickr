@@ -1,3 +1,6 @@
+--
+name: silverstripeflickrcacheconfig
+--
 SilverStripe\Core\Injector\Injector:
   Psr\SimpleCache\CacheInterface.FlickrService:
     factory: SilverStripe\Core\Cache\CacheFactory
