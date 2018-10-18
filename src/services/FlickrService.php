@@ -1,6 +1,22 @@
 <?php
-class FlickrService extends RestfulService
+
+namespace MadMatt\Flickr\Services;
+
+use Psr\Log\LoggerInterface;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\ArrayList;
+use Psr\SimpleCache\CacheInterface;
+use GuzzleHttp\Client;
+class FlickrService
 {
+    /**
+     * Handler for the GuzzleHttp client, has replaced the 'RestfulService' API
+     * as it is now deprecated in 4.0
+     *
+     * @var GuzzleHttp
+     */
+    private static $client;
+    
     /**
      * @var int Expiry time for API calls
      * This determines how long the cache is used before another API request
@@ -47,10 +63,15 @@ class FlickrService extends RestfulService
      */
     private $responseMessage;
 
+    /**
+     * Instantiate Guzzle client with Flickr uri
+     */
     public function __construct()
     {
-        parent::__construct('https://www.flickr.com/services/rest/', $this->config()->flickr_soft_cache_expiry);
-        $this->checkErrors = true;
+        $this->client = new Client([
+            'base_uri' => 'https://www.flickr.com/services/rest/',
+            'timeout' => $this->config()->flickr_soft_cache_expiry,
+        ]);
     }
 
     /**
@@ -64,15 +85,23 @@ class FlickrService extends RestfulService
             return null;
         }
 
-        $params = array(
+        $params = [
             'method' => 'flickr.photosets.getList',
             'user_id' => $userId,
+        ];
+
+        // $this->client->setQueryString(array_merge($this->defaultParams(), $params));
+        $response = $this->client->request(
+            'GET',
+            'https://www.flickr.com/services/rest/',
+            [
+                'query' => array_merge($this->defaultParams(), $params)
+            ]
         );
 
-        $this->setQueryString(array_merge($this->defaultParams(), $params));
-
         try {
-            $rawResponse = $this->request()->getBody();
+            // $rawResponse = $this->request()->getBody();
+            $rawResponse = $response->getBody();
             $response = unserialize($rawResponse);
 
             if (!$response || $response['stat'] !== 'ok') {
@@ -92,13 +121,13 @@ class FlickrService extends RestfulService
             return $results;
         } catch (Exception $e) {
             if (!$this->config()->skip_error_logging) {
-                SS_Log::log(
+                Injector::inst()->get(LoggerInterface::class)::log(
                     sprintf(
                         "Couldn't retrieve Flickr photosets for user '%s': Message: %s",
                         $userId,
                         $e->getMessage()
                     ),
-                    SS_Log::ERR
+                    Injector::inst()->get(LoggerInterface::class)::ERR
                 );
             }
 
@@ -106,6 +135,12 @@ class FlickrService extends RestfulService
         }
     }
 
+    /**
+     *
+     * @param int $photosetId
+     * @param int $userId
+     * @return ArrayList<FlickrPhoto>
+     */
     public function getPhotosetById($photosetId, $userId = null)
     {
         if (!$this->isAPIAvailable()) {
@@ -121,10 +156,18 @@ class FlickrService extends RestfulService
             $params['user_id'] = $userId;
         }
 
-        $this->setQueryString(array_merge($this->defaultParams(), $params));
+        // $this->setQueryString(array_merge($this->defaultParams(), $params));
+        $response = $this->client->request(
+            'GET',
+            'https://www.flickr.com/services/rest/',
+            [
+                'query' => array_merge($this->defaultParams(), $params)
+            ]
+        );
 
         try {
-            $rawResponse = $this->request()->getBody();
+            // $rawResponse = $this->request()->getBody();
+            $rawResponse = $response->getBody();
             $response = unserialize($rawResponse);
 
             if (!$response || $response['stat'] !== 'ok') {
@@ -135,14 +178,14 @@ class FlickrService extends RestfulService
             return $result;
         } catch (Exception $e) {
             if (!$this->config()->skip_error_logging) {
-                SS_Log::log(
+                Injector::inst()->get(LoggerInterface::class)::log(
                     sprintf(
                         "Couldn't retrieve Flickr photoset for user '%s', photoset '%s': Message: %s",
                         $userId,
                         $photosetId,
                         $e->getMessage()
                     ),
-                    SS_Log::ERR
+                    Injector::inst()->get(LoggerInterface::class)::ERR
                 );
             }
 
@@ -167,17 +210,24 @@ class FlickrService extends RestfulService
             'method' => 'flickr.photosets.getPhotos',
             'photoset_id' => $photosetId,
             'extras' => 'description,original_format'
-
         );
 
         if ($userId) {
             $params['user_id'] = $userId;
         }
 
-        $this->setQueryString(array_merge($this->defaultParams(), $params));
+        // $this->setQueryString(array_merge($this->defaultParams(), $params));
+        $response = $this->client->request(
+            'GET',
+            'https://www.flickr.com/services/rest/',
+            [
+                'query' => array_merge($this->defaultParams(), $params)
+            ]
+        );
 
         try {
-            $rawResponse = $this->request()->getBody();
+            // $rawResponse = $this->request()->getBody();
+            $rawResponse = $response->getBody();
             $response = unserialize($rawResponse);
 
             if (!$response || !isset($response['stat']) || $response['stat'] !== 'ok') {
@@ -197,13 +247,13 @@ class FlickrService extends RestfulService
             return $results;
         } catch (Exception $e) {
             if (!$this->config()->skip_error_logging) {
-                SS_Log::log(
+                Injector::inst()->get(LoggerInterface::class)::log(
                     sprintf(
                         "Couldn't retrieve Flickr photos in photoset '%s' for optional user '%s'",
                         $photosetId,
                         $userId
                     ),
-                    SS_Log::ERR
+                    Injector::inst()->get(LoggerInterface::class)::ERR
                 );
             }
 
@@ -241,9 +291,9 @@ class FlickrService extends RestfulService
         $cacheKey = md5(implode('_', $cacheKey));
 
         // setup cache
-        $cache = SS_Cache::factory('FlickrService');
+        $cache = Injector::inst()->get(CacheInterface::class . '.FlickrService');
         $cache->setOption('automatic_serialization', true);
-        SS_Cache::set_cache_lifetime('FlickrService', $this->config()->flickr_hard_cache_expiry);
+        $cache::set_cache_lifetime('FlickrService', $this->config()->flickr_hard_cache_expiry);
 
         // check if cached response exists or soft expiry has elapsed
         $metadata = $cache->getBackend()->getMetadatas('FlickrService' . $cacheKey);
@@ -257,13 +307,13 @@ class FlickrService extends RestfulService
                     $cache->save($result, $cacheKey);
                 }
             } catch (Exception $e) {
-                SS_Log::log(
+                Injector::inst()->get(LoggerInterface::class)::log(
                     sprintf(
                         "Couldn't retrieve Flickr photos using '%s': Message: %s",
                         $funcName,
                         $e->getMessage()
                     ),
-                    SS_Log::ERR
+                    Injector::inst()->get(LoggerInterface::class)::ERR
                 );
             }
         }
@@ -327,12 +377,23 @@ class FlickrService extends RestfulService
         return time() > $modifiedTime + $this->config()->flickr_soft_cache_expiry;
     }
 
+    /**
+     * Helper to set API key
+     *
+     * @param string $key
+     * @return void
+     */
     public function setApiKey($key)
     {
         $this->apiKey = $key;
         return $this;
     }
 
+    /**
+     * Helper to get the API key
+     *
+     * @return string
+     */
     public function getApiKey()
     {
         return $this->apiKey;
@@ -340,22 +401,31 @@ class FlickrService extends RestfulService
 
     /**
      * Get the API response code
+     * 
+     * @param Response
      * @return String
      */
-    public function getApiResponseCode()
+    public function getApiResponseCode($response)
     {
-        return $this->responseCode;
+        return $response->getStatusCode();
     }
 
     /**
      * Get the API response message
+     * 
+     * @param Response
      * @return String
      */
-    public function getApiResponseMessage()
+    public function getApiResponseMessage($response)
     {
-        return $this->responseMessage;
+        return $response->getReasonPhrase();
     }
         
+    /**
+     * Helper to get default params of client
+     *
+     * @return array
+     */
     private function defaultParams()
     {
         return array(

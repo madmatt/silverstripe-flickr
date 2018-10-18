@@ -4,7 +4,7 @@ This module favours letting the developer do their own thing over creating page 
 
 # Requirements
 
-$   silverstripe/framework:^4.0
+    $   silverstripe/framework:^4.0
 
 TODO:
 

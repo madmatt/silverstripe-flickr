@@ -1,0 +1,6 @@
+SilverStripe\Core\Injector\Injector:
+  Psr\SimpleCache\CacheInterface.FlickrService:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: FlickrService
+      defaultLifetime: 60
