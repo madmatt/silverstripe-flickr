@@ -104,7 +104,7 @@ class FlickrService
                     'query' => array_merge($this->defaultParams(), $params)
                 ]
             );
-            
+
             $rawResponse = $request->getBody();
             $response = unserialize($rawResponse);
 
@@ -158,7 +158,7 @@ class FlickrService
         if (!is_null($userId)) {
             $params['user_id'] = $userId;
         }
- 
+
         try {
             $request = $this->client->request(
                 'GET',
@@ -274,9 +274,9 @@ class FlickrService
         }
 
         // build up a unique cache name
-        $cacheKey = array(
+        $cacheKey = [
             $funcName
-        );
+        ];
 
         foreach ($args as $arg) {
             $cacheKey[] = $arg;
