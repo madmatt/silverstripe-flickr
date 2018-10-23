@@ -80,6 +80,16 @@ class FlickrService
         ]);
     }
 
+    public function setClient($client)
+    {
+        $this->client = $client;
+    }
+
+    public function getClient()
+    {
+        return $this->client;
+    }
+
     /**
      * @param string $userId The Flickr user_id to get all photosets for
      * @todo Currently returns all photosets. Optimisations could be made to only return a single page of results
