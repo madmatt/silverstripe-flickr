@@ -1,29 +1,51 @@
 <?php
 
+namespace MadMatt\Flickr\Model;
+
+use SilverStripe\View\ViewableData;
+
 /**
  * Class FlickrData
  *
  * Represents a single object retrieved from the Flickr API. This shouldn't be used directly (hence being abstract), but
  * is extended by other objects - e.g. {@link FlickrPhoto}, {@link FlickrPhotoset}
+ *
+ * @property int $ID
  */
 abstract class FlickrData extends ViewableData
 {
+    /**
+     * @var mixed
+     */
     protected $data;
 
-    private static $casting = array(
+    /**
+     * @var array
+     */
+    private static $casting = [
         'ID' => 'Varchar' // ID values for Flickr data can either be varchars or integers
-    );
+    ];
 
+    /**
+     * @param mixed $set
+     */
     public function __construct($set)
     {
         $this->data = $set;
     }
 
+    /**
+     * @return int
+     */
     public function getID()
     {
         return $this->data['id'];
     }
 
+    /**
+     * @param string $property
+     * @return mixed
+     */
     public function __get($property)
     {
         if ($this->hasMethod($method = "get$property")) {
